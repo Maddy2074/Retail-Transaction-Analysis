@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>ContentFilters</key>
+	<dict/>
+	<key>auto_connect</key>
+	<true/>
+	<key>data</key>
+	<dict>
+		<key>connection</key>
+		<dict>
+			<key>allowDataLocalInfile</key>
+			<integer>1</integer>
+			<key>database</key>
+			<string>PortfolioProject</string>
+			<key>enableClearTextPlugin</key>
+			<integer>1</integer>
+			<key>host</key>
+			<string>127.0.0.1</string>
+			<key>kcid</key>
+			<string>6279432279228337800</string>
+			<key>name</key>
+			<string>localhost</string>
+			<key>port</key>
+			<integer>3306</integer>
+			<key>rdbms_type</key>
+			<string>mysql</string>
+			<key>sslCACertFileLocation</key>
+			<string></string>
+			<key>sslCACertFileLocationEnabled</key>
+			<integer>0</integer>
+			<key>sslCertificateFileLocation</key>
+			<string></string>
+			<key>sslCertificateFileLocationEnabled</key>
+			<integer>0</integer>
+			<key>sslKeyFileLocation</key>
+			<string></string>
+			<key>sslKeyFileLocationEnabled</key>
+			<integer>0</integer>
+			<key>type</key>
+			<string>SPTCPIPConnection</string>
+			<key>useSSL</key>
+			<integer>1</integer>
+			<key>user</key>
+			<string>root</string>
+		</dict>
+		<key>session</key>
+		<dict>
+			<key>connectionEncoding</key>
+			<string>utf8mb4</string>
+			<key>contentFilterV2</key>
+			<dict>
+				<key>children</key>
+				<array/>
+				<key>filterClass</key>
+				<string>groupNode</string>
+				<key>isConjunction</key>
+				<true/>
+			</dict>
+			<key>contentPageNumber</key>
+			<integer>1</integer>
+			<key>contentSelection</key>
+			<data>
+			YnBsaXN0MDDUAQIDBAUGBwpYJHZlcnNpb25ZJGFyY2hpdmVyVCR0
+			b3BYJG9iamVjdHMSAAGGoF8QD05TS2V5ZWRBcmNoaXZlctEICVRk
+			YXRhgAGoCwwXGBkaHiVVJG51bGzTDQ4PEBMWV05TLmtleXNaTlMu
+			b2JqZWN0c1YkY2xhc3OiERKAAoADohQVgASABYAHVHR5cGVUcm93
+			c18QHVNlbGVjdGlvbkRldGFpbFR5cGVOU0luZGV4U2V00hsPHB1c
+			TlNSYW5nZUNvdW50EACABtIfICEiWiRjbGFzc25hbWVYJGNsYXNz
+			ZXNaTlNJbmRleFNldKIjJFpOU0luZGV4U2V0WE5TT2JqZWN00h8g
+			JidcTlNEaWN0aW9uYXJ5oiYkAAgAEQAaACQAKQAyADcASQBMAFEA
+			UwBcAGIAaQBxAHwAgwCGAIgAigCNAI8AkQCTAJgAnQC9AMIAzwDR
+			ANMA2ADjAOwA9wD6AQUBDgETASAAAAAAAAACAQAAAAAAAAAoAAAA
+			AAAAAAAAAAAAAAABIw==
+			</data>
+			<key>contentSortColIsAsc</key>
+			<true/>
+			<key>contentViewport</key>
+			<string>{{0, 0}, {1138.5, 713}}</string>
+			<key>isToolbarVisible</key>
+			<true/>
+			<key>queries</key>
+			<string>CREATE TABLE ecommerce_data (
+InvoiceNo int,
+StockCode varchar(255),
+Description	varchar(255),
+Quantity int,
+InvoiceDate	datetime,
+UnitPrice double, 
+CustomerID varchar(255),
+Country varchar(255),
+);
+
+
+-- 1)Get the total revenue for each product:
+SELECT StockCode, SUM(Quantity * UnitPrice) AS TotalRevenue
+FROM ecommerce_data
+GROUP BY StockCode;
+
+-- 2) Get the total number of transactions for each customer:
+SELECT CustomerID, COUNT(*) AS NumTransactions
+FROM ecommerce_data
+GROUP BY CustomerID;
+
+-- 3) Get the top 10 products by revenue:
+SELECT StockCode, SUM(Quantity * UnitPrice) AS TotalRevenue
+FROM ecommerce_data
+GROUP BY StockCode
+ORDER BY TotalRevenue DESC
+LIMIT 10;
+
+-- 4) REVENUE FOR TOP 10 COUNTRIES 
+SELECT Country, SUM(Quantity * UnitPrice) AS Revenue
+FROM ecommerce_data
+GROUP BY Country
+ORDER BY Revenue DESC
+LIMIT 10
+
+-- 5) Get the total revenue for each month:
+SELECT DATE_FORMAT(InvoiceDate, '%Y') AS Year, 
+       DATE_FORMAT(InvoiceDate, '%m') AS Month, 
+       SUM(Quantity * UnitPrice) AS Revenue
+FROM ecommerce_data
+WHERE CustomerID IS NOT NULL
+GROUP BY Year, Month
+ORDER BY Year, Month
+-- 6)Get the top 10 customers by total revenue:
+SELECT CustomerID, SUM(Quantity * UnitPrice) AS TotalRevenue
+FROM ecommerce_data
+GROUP BY CustomerID
+ORDER BY TotalRevenue DESC
+LIMIT 10;
+
+-- 7)Get the number of unique customers by country:
+SELECT Country, COUNT(DISTINCT CustomerID) AS NumCustomers
+FROM ecommerce_data
+GROUP BY Country
+ORDER BY NumCustomers DESC;
+
+-- 8)Get the top 10 most frequently purchased items:
+SELECT StockCode, Description, SUM(Quantity) AS TotalQuantity
+FROM ecommerce_data
+GROUP BY StockCode, Description
+ORDER BY TotalQuantity DESC
+LIMIT 10;
+
+-- 9) Get the top 5 best-selling items for each country: 
+SELECT t1.Country, t1.StockCode, t1.Description, t1.NumSold
+FROM (
+    SELECT Country, StockCode, Description, SUM(Quantity) AS NumSold,
+           ROW_NUMBER() OVER (PARTITION BY Country ORDER BY SUM(Quantity) DESC) AS RowNum
+    FROM ecommerce_data
+    GROUP BY Country, StockCode, Description
+) t1
+WHERE t1.RowNum &lt;= 5
+ORDER BY t1.Country, t1.NumSold DESC;
+
+-- 10) Get the monthly revenue for each product category in 2011:
+SELECT DATE_FORMAT(InvoiceDate, '%Y-%m') AS Month, Category, SUM(Quantity * UnitPrice) AS TotalRevenue
+FROM (
+    SELECT InvoiceDate, StockCode, Quantity, UnitPrice,
+           CASE 
+              WHEN LEFT(StockCode, 1) BETWEEN '0' AND '9' THEN 'Other'
+              ELSE LEFT(StockCode, 1)
+           END AS Category
+    FROM ecommerce_data
+    WHERE YEAR(InvoiceDate) = 2011
+) t
+GROUP BY Month, Category
+ORDER BY Month, TotalRevenue DESC;</string>
+			<key>table</key>
+			<string>ecommerce_data</string>
+			<key>view</key>
+			<string>SP_VIEW_CUSTOMQUERY</string>
+			<key>windowVerticalDividerPosition</key>
+			<real>300.5</real>
+		</dict>
+	</dict>
+	<key>encrypted</key>
+	<false/>
+	<key>format</key>
+	<string>connection</string>
+	<key>queryFavorites</key>
+	<array/>
+	<key>rdbms_type</key>
+	<string>mysql</string>
+	<key>rdbms_version</key>
+	<string>8.0.31</string>
+	<key>version</key>
+	<integer>1</integer>
+</dict>
+</plist>
